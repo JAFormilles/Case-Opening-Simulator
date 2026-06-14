@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS:GO / CS2 Custom Case Opener</title>
+    <style>
+        :root {
+            --milspec: #4b69ff;
+            --restricted: #8847ff;
+            --classified: #d32ce6;
+            --covert: #eb4b4b;
+            --special: #e4ae39;
+        }
+
+        body {
+            background-color: #12161a;
+            color: #f0f0f0;
+            font-family: 'Arial Black', 'Helvetica Neue', sans-serif;
+            text-transform: uppercase;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 26px;
+            letter-spacing: 2px;
+            margin: 0 0 5px 0;
+            color: #fff;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: #6a7c8c;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+        }
+
+        /* Ticker Window Viewport */
+        .case-wrapper {
+            position: relative;
+            padding: 4px;
+            background: linear-gradient(180deg, #2d3238, #1b1e22);
+            border: 2px solid #3c434d;
+            border-radius: 4px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            margin-bottom: 20px;
+        }
+
+        .case-viewport {
+            position: relative;
+            width: 750px;
+            height: 165px;
+            background: #0d0f12;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+
+        .pointer {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, #ff3c3c 20%, #ff3c3c 80%, transparent);
+            z-index: 10;
+            box-shadow: 0 0 12px rgba(255, 60, 60, 0.8);
+        }
+
+        .pointer::before, .pointer::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+        }
+        .pointer::before { top: 0; border-top-color: #ff3c3c; }
+        .pointer::after { bottom: 0; border-bottom-color: #ff3c3c; }
+
+        .item-track {
+            display: flex;
+            width: max-content;
+            height: 100%;
+            transform: translateX(0px);
+        }
+
+        /* Horizontal Roller Cards */
+        .item-card {
+            position: relative;
+            width: 130px;
+            height: calc(100% - 16px);
+            margin: 8px 4px;
+            background: linear-gradient(180deg, #24292e 0%, #171a1d 100%);
+            border-bottom: 5px solid #fff;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 5px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .item-card::before {
+            content: '';
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 110px;
+            height: 110px;
+            opacity: 0.4;
+            z-index: 1;
+        }
+
+        .item-card img {
+            width: 85px;
+            height: 85px;
+            object-fit: cover;
+            border-radius: 4px;
+            z-index: 2;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .item-card .name-label {
+            font-size: 12px;
+            color: #fff;
+            font-weight: 900;
+            z-index: 2;
+            text-align: center;
+            width: 95%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Rarity Classes */
+        .milspec { border-bottom-color: var(--milspec); }
+        .milspec::before { background: radial-gradient(circle, var(--milspec) 0%, transparent 70%); }
+        .restricted { border-bottom-color: var(--restricted); }
+        .restricted::before { background: radial-gradient(circle, var(--restricted) 0%, transparent 70%); }
+        .classified { border-bottom-color: var(--classified); }
+        .classified::before { background: radial-gradient(circle, var(--classified) 0%, transparent 70%); }
+        .covert { border-bottom-color: var(--covert); }
+        .covert::before { background: radial-gradient(circle, var(--covert) 0%, transparent 70%); }
+        .special { border-bottom-color: var(--special); }
+        .special::before { background: radial-gradient(circle, var(--special) 0%, transparent 70%); }
+
+        /* Creator / Inventory Grid Panel */
+        .management-panel {
+            background: #1b1e22;
+            border: 1px solid #2d3238;
+            padding: 24px;
+            border-radius: 4px;
+            width: 750px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            box-sizing: border-box;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2d3238;
+            padding-bottom: 12px;
+        }
+
+        .panel-header h2 {
+            font-size: 14px;
+            margin: 0;
+            color: #9daec0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Giant Custom Round Plus Icon */
+        .add-btn {
+            background: linear-gradient(180deg, #4b69ff 0%, #354ec4 100%);
+            border: 1px solid #637eff;
+            color: white;
+            width: 36px;
+            height: 36px;
+            font-weight: 900;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(75, 105, 255, 0.3);
+            transition: transform 0.1s, background 0.2s;
+        }
+        .add-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(180deg, #5c78ff 0%, #3e58da 100%);
+        }
+
+        /* Balance/Equalize Utility Button */
+        .equalize-btn {
+            background: linear-gradient(180deg, #555e6b 0%, #3c434d 100%);
+            border: 1px solid #6a7c8c;
+            color: #fff;
+            padding: 0 16px;
+            height: 36px;
+            font-size: 11px;
+            font-weight: 900;
+            border-radius: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s, background 0.2s;
+            font-family: inherit;
+        }
+        .equalize-btn:hover {
+            transform: scale(1.02);
+            background: linear-gradient(180deg, #6a7c8c 0%, #48515c 100%);
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+            margin-bottom: 20px;
+        }
+
+        /* Clean Card block for setting up each custom item */
+        .item-config-block {
+            background: #131619;
+            border: 1px solid #282e34;
+            border-radius: 4px;
+            padding: 12px;
+            position: relative;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Left Side Image Selector Area */
+        .image-drop-zone {
+            width: 80px;
+            height: 80px;
+            background: #0d0f12;
+            border: 2px dashed #3c434d;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .image-drop-zone:hover, .image-drop-zone.dragover {
+            border-color: #e4ae39;
+        }
+        .image-drop-zone span {
+            font-size: 9px;
+            color: #555e6b;
+            text-align: center;
+            pointer-events: none;
+            padding: 0 4px;
+        }
+        .image-drop-zone img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .image-drop-zone input[type="file"] {
+            display: none;
+        }
+
+        /* Right Side Parameters Details fields */
+        .item-details {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .item-details input, .item-details select {
+            background: #0d0f12;
+            border: 1px solid #3c434d;
+            color: #fff;
+            padding: 6px;
+            font-size: 11px;
+            border-radius: 2px;
+            box-sizing: border-box;
+            width: 100%;
+            font-family: inherit;
+        }
+        
+        .item-details .row-split {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .weight-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 60%;
+        }
+
+        .weight-container input {
+            padding-right: 48px; /* Room for the inside badge */
+        }
+
+        .pct-badge {
+            position: absolute;
+            right: 5px;
+            font-size: 10px;
+            color: #a4b4c4;
+            background: #1c2127;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .item-details select {
+            width: 40%;
+        }
+
+        .remove-row-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #eb4b4b;
+            border: 1px solid #ff6363;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+
+        .spin-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(180deg, #dd9b26 0%, #b87914 100%);
+            border: 1px solid #e4ae39;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            border-radius: 3px;
+            cursor: pointer;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+        }
+        .spin-btn:disabled {
+            background: #2d3238;
+            border-color: #3c434d;
+            color: #555e6b;
+            cursor: not-allowed;
+        }
+
+        #winnerDisplay {
+            font-size: 24px;
+            font-weight: 900;
+            text-align: center;
+            min-height: 35px;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Custom Inventory Unboxing</h1>
+    <div class="subtitle">Assign Custom Weights, Tier Colors, and File Drop Images</div>
+
+    <div class="case-wrapper">
+        <div class="pointer"></div>
+        <div class="case-viewport">
+            <div class="item-track" id="itemTrack"></div>
+        </div>
+    </div>
+
+    <div id="winnerDisplay"></div>
+
+    <div class="management-panel">
+        <div class="panel-header">
+            <h2>Add Items & Adjust Probabilities</h2>
+            <div class="header-actions">
+                <button class="equalize-btn" onclick="equalizeProbabilities()" title="Make all items have an equal drop chance">Equalize Probabilities</button>
+                <button class="add-btn" onclick="addItemBlock()" title="Add New Item">+</button>
+            </div>
+        </div>
+        
+        <div class="items-grid" id="itemsGrid"></div>
+
+        <button class="spin-btn" id="spinBtn" onclick="spinCase()">Spin Weapon Case</button>
+    </div>
+
+<script>
+    const CARD_WIDTH = 130;
+    const CARD_MARGIN = 4;
+    const CARD_FULL_WIDTH = CARD_WIDTH + (CARD_MARGIN * 2); // 138px
+    const VIEWPORT_WIDTH = 750;
+    const TOTAL_TRACK_CARDS = 55; 
+    const WINNING_INDEX = 46; 
+
+    const defaultData = [
+        { name: "M4A4 | Howl", img: "", weight: 60, tier: "milspec" },
+        { name: "AWP | Asiimov", img: "", weight: 30, tier: "restricted" },
+        { name: "AK-47 | Bloodsport", img: "", weight: 8, tier: "covert" },
+        { name: "★ Butterfly Knife", img: "", weight: 2, tier: "special" }
+    ];
+
+    let audioCtx = null;
+
+    function playTickSound() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') return;
+
+            let now = audioCtx.currentTime;
+
+            let bodyOsc = audioCtx.createOscillator();
+            let bodyGain = audioCtx.createGain();
+            bodyOsc.type = 'sine';
+            bodyOsc.frequency.setValueAtTime(1200, now);
+            bodyOsc.frequency.exponentialRampToValueAtTime(300, now + 0.012);
+            
+            bodyGain.gain.setValueAtTime(0.15, now);
+            bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
+            
+            bodyOsc.connect(bodyGain);
+            bodyGain.connect(audioCtx.destination);
+
+            let tapOsc = audioCtx.createOscillator();
+            let tapGain = audioCtx.createGain();
+            tapOsc.type = 'triangle';
+            tapOsc.frequency.setValueAtTime(6500, now);
+            tapOsc.frequency.exponentialRampToValueAtTime(1500, now + 0.005);
+            
+            tapGain.gain.setValueAtTime(0.25, now);
+            tapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.005);
+            
+            tapOsc.connect(tapGain);
+            tapGain.connect(audioCtx.destination);
+
+            bodyOsc.start(now);
+            bodyOsc.stop(now + 0.012);
+            tapOsc.start(now);
+            tapOsc.stop(now + 0.005);
+
+        } catch(e) {}
+    }
+
+    function updatePercentages() {
+        const blocks = document.querySelectorAll('.item-config-block');
+        let totalWeight = 0;
+        
+        blocks.forEach(block => {
+            const weightInput = block.querySelector('.input-weight');
+            const val = parseFloat(weightInput.value) || 0;
+            totalWeight += val;
+        });
+
+        blocks.forEach(block => {
+            const weightInput = block.querySelector('.input-weight');
+            const badge = block.querySelector('.pct-badge');
+            const val = parseFloat(weightInput.value) || 0;
+            
+            let pct = "0.0%";
+            if (totalWeight > 0 && val > 0) {
+                pct = ((val / totalWeight) * 100).toFixed(1) + "%";
+            }
+            badge.textContent = pct;
+        });
+    }
+
+    // Engine function to flat-line calculations to equal distribution values
+    function equalizeProbabilities() {
+        const blocks = document.querySelectorAll('.item-config-block');
+        if (blocks.length === 0) return;
+        
+        // Setting every element to an identical base weight factor (e.g. 10) achieves dead parity
+        blocks.forEach(block => {
+            const weightInput = block.querySelector('.input-weight');
+            weightInput.value = 10;
+        });
+        
+        updatePercentages();
+    }
+
+    function addItemBlock(data = {name: "", img: "", weight: 10, tier: "milspec"}) {
+        const grid = document.getElementById('itemsGrid');
+        const block = document.createElement('div');
+        block.className = 'item-config-block';
+        
+        const uniqueId = 'img_' + Math.random().toString(36).substr(2, 9);
+
+        block.innerHTML = `
+            <button class="remove-row-btn" onclick="this.parentElement.remove(); updatePercentages();">X</button>
+            
+            <div class="image-drop-zone" id="drop_${uniqueId}" onclick="document.getElementById('${uniqueId}').click()">
+                <span>Drop Image or Click</span>
+                <img id="view_${uniqueId}" src="${data.img}" style="${data.img ? '' : 'display:none;'}">
+                <input type="file" id="${uniqueId}" accept="image/*" onchange="handleFileSelect(this, 'view_${uniqueId}')">
+            </div>
+
+            <div class="item-details">
+                <input type="text" class="input-name" placeholder="Item Name" value="${data.name}">
+                <div class="row-split">
+                    <div class="weight-container">
+                        <input type="number" class="input-weight" placeholder="Weight" min="0.001" step="any" value="${data.weight}" oninput="updatePercentages()" title="Chance weight value">
+                        <span class="pct-badge">0.0%</span>
+                    </div>
+                    <select class="input-tier">
+                        <option value="milspec" ${data.tier === 'milspec' ? 'selected' : ''}>Blue</option>
+                        <option value="restricted" ${data.tier === 'restricted' ? 'selected' : ''}>Purple</option>
+                        <option value="classified" ${data.tier === 'classified' ? 'selected' : ''}>Pink</option>
+                        <option value="covert" ${data.tier === 'covert' ? 'selected' : ''}>Red</option>
+                        <option value="special" ${data.tier === 'special' ? 'selected' : ''}>★ Gold ★</option>
+                    </select>
+                </div>
+            </div>
+        `;
+
+        grid.appendChild(block);
+        setupDragAndDrop(`drop_${uniqueId}`, `${uniqueId}`, `view_${uniqueId}`);
+        updatePercentages();
+    }
+
+    function handleFileSelect(input, imgElementId) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgEl = document.getElementById(imgElementId);
+                imgEl.src = e.target.result;
+                imgEl.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function setupDragAndDrop(zoneId, inputId, imgElementId) {
+        const zone = document.getElementById(zoneId);
+        const input = document.getElementById(inputId);
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            zone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            zone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+            }, false);
+        });
+
+        zone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if(files.length) {
+                input.files = files;
+                handleFileSelect(input, imgElementId);
+            }
+        }, false);
+    }
+
+    function readCurrentInventoryPool() {
+        const blocks = document.querySelectorAll('.item-config-block');
+        let pool = [];
+        
+        blocks.forEach(block => {
+            const name = block.querySelector('.input-name').value.trim();
+            const imgEl = block.querySelector('.image-drop-zone img');
+            const weight = parseFloat(block.querySelector('.input-weight').value) || 0;
+            const tier = block.querySelector('.input-tier').value;
+            let imgSrc = (imgEl && imgEl.style.display !== 'none') ? imgEl.src : "";
+
+            if (name && weight > 0) {
+                pool.push({ name, img: imgSrc, weight, tier });
+            }
+        });
+        return pool;
+    }
+
+    function calculateWeightedWinner(pool) {
+        const totalWeight = pool.reduce((sum, item) => sum + item.weight, 0);
+        let randomRoll = Math.random() * totalWeight;
+        
+        for (let item of pool) {
+            if (randomRoll < item.weight) return item;
+            randomRoll -= item.weight;
+        }
+        return pool[pool.length - 1];
+    }
+
+    function buildVisualTrack(pool, guaranteedWinner) {
+        const track = document.getElementById('itemTrack');
+        track.innerHTML = "";
+        
+        for(let i = 0; i < TOTAL_TRACK_CARDS; i++) {
+            let item = (i === WINNING_INDEX) ? guaranteedWinner : pool[Math.floor(Math.random() * pool.length)];
+            const card = document.createElement('div');
+            card.className = `item-card ${item.tier}`;
+            
+            let imageTag = item.img 
+                ? `<img src="${item.img}" alt="Item">` 
+                : `<img src="https://picsum.photos/100/100?sig=${Math.floor(Math.random()*10000)}" alt="Item">`;
+
+            card.innerHTML = `
+                ${imageTag}
+                <div class="name-label">${item.name}</div>
+            `;
+            track.appendChild(card);
+        }
+    }
+
+    function spinCase() {
+        const pool = readCurrentInventoryPool();
+        if (pool.length === 0) {
+            alert("Please ensure you have at least one valid item configuration with a name and positive weight!");
+            return;
+        }
+
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const track = document.getElementById('itemTrack');
+        const spinBtn = document.getElementById('spinBtn');
+        const winnerDisplay = document.getElementById('winnerDisplay');
+
+        spinBtn.disabled = true;
+        winnerDisplay.innerHTML = "";
+
+        track.style.transition = "none";
+        track.style.transform = "translateX(0px)";
+
+        const actualWinner = calculateWeightedWinner(pool);
+        buildVisualTrack(pool, actualWinner);
+
+        setTimeout(() => {
+            const basePosition = WINNING_INDEX * CARD_FULL_WIDTH;
+            const centerOffset = (VIEWPORT_WIDTH / 2);
+            const microPadding = Math.floor(Math.random() * (CARD_FULL_WIDTH - 20)) + 10;
+            const finalTargetX = basePosition - centerOffset + microPadding;
+
+            const duration = 5000;
+            track.style.transition = `transform ${duration}ms cubic-bezier(0.12, 0.8, 0.15, 1)`;
+            track.style.transform = `translateX(-${finalTargetX}px)`;
+
+            let systemLastOffsetCalculated = 0;
+            const startTime = performance.now();
+
+            function runTickTracking(now) {
+                const elapsed = now - startTime;
+                if(elapsed >= duration) return;
+
+                const progress = elapsed / duration;
+                const easeOutFactor = 1 - Math.pow(1 - progress, 3.95); 
+                const currentX = finalTargetX * easeOutFactor;
+
+                let relativeMarkerCross = currentX + (VIEWPORT_WIDTH / 2) - microPadding;
+                let calculatedCurrentIndex = Math.floor(relativeMarkerCross / CARD_FULL_WIDTH);
+
+                if(calculatedCurrentIndex > systemLastOffsetCalculated) {
+                    playTickSound();
+                    systemLastOffsetCalculated = calculatedCurrentIndex;
+                }
+                requestAnimationFrame(runTickTracking);
+            }
+            requestAnimationFrame(runTickTracking);
+
+            setTimeout(() => {
+                let color = `var(--${actualWinner.tier})`;
+                winnerDisplay.innerHTML = `UNBOXED: <span style="color: ${color}">${actualWinner.name}</span>`;
+                spinBtn.disabled = false;
+            }, duration);
+
+        }, 40);
+    }
+
+    // Initialize layout
+    defaultData.forEach(item => addItemBlock(item));
+</script>
+</body>
+</html>
